@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloudflare Trace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Cloudflare Trace</h1>
+      <button id="refresh" type="button">Refresh</button>
+      <button id="theme-toggle" type="button">Theme: System</button>
+    </header>
+
+    <div id="output"></div>
+
+    <footer>Data from <a href="https://one.one.one.one/cdn-cgi/trace" style="color:var(--accent)">one.one.one.one/cdn-cgi/trace</a></footer>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(function(e) {
+        console.warn('SW registration failed:', e);
+      });
+    }
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
