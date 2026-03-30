@@ -1,5 +1,5 @@
-const CACHE = 'trace-v1';
-const ASSETS = ['/', '/index.html', '/style.css', '/app.js', '/colos.json'];
+const CACHE = 'trace-v2';
+const ASSETS = ['/', '/index.html', '/style.css', '/app.js', '/colos.json', '/defaults.json'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(

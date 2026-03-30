@@ -13,11 +13,31 @@
   <div class="page">
     <header>
       <h1>Cloudflare Trace</h1>
-      <button id="refresh" type="button">Refresh</button>
+      <nav class="tabs">
+        <button class="tab active" data-tab="trace">Trace</button>
+        <button class="tab" data-tab="urls">URLs</button>
+      </nav>
       <button id="theme-toggle" type="button">Theme: System</button>
     </header>
 
-    <div id="output"></div>
+    <div id="tab-trace" class="tab-panel">
+      <div class="tab-toolbar">
+        <button id="refresh" type="button">Refresh</button>
+      </div>
+      <div id="output"></div>
+    </div>
+
+    <div id="tab-urls" class="tab-panel hidden">
+      <div class="tab-toolbar">
+        <button id="fetch-all" type="button">Fetch All</button>
+        <button id="reset-urls" type="button">Reset to defaults</button>
+      </div>
+      <div id="url-list"></div>
+      <div class="add-url-row">
+        <input id="url-input" type="text" placeholder="example.com">
+        <button id="add-url" type="button">Add</button>
+      </div>
+    </div>
 
     <footer>Data from <a href="https://one.one.one.one/cdn-cgi/trace" style="color:var(--accent)">one.one.one.one/cdn-cgi/trace</a></footer>
   </div>
