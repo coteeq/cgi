@@ -100,7 +100,7 @@ h1 {
 }
 
 /* ---------- Header / toolbar buttons ---------- */
-#theme-toggle, #refresh, #fetch-all, #reset-urls {
+#theme-toggle, #refresh, #fetch-all, #reset-urls, #remove-selected {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
@@ -115,6 +115,7 @@ h1 {
 #theme-toggle:hover,
 #fetch-all:hover:not(:disabled),
 #reset-urls:hover:not(:disabled),
+#remove-selected:hover:not(:disabled),
 #refresh:hover:not(:disabled) { border-color: var(--accent); }
 #refresh:disabled, #fetch-all:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -255,6 +256,12 @@ h1 {
   flex-wrap: wrap;
 }
 
+.url-check {
+  flex: none;
+  margin: 0;
+  cursor: pointer;
+}
+
 .url-text {
   flex: 1;
   font-size: 0.9rem;
@@ -308,8 +315,6 @@ h1 {
 }
 .btn-small:hover:not(:disabled) { border-color: var(--accent); }
 .btn-small:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.btn-danger:hover:not(:disabled) { border-color: #cc3300; color: #cc3300; }
 
 .url-empty {
   color: var(--text-muted);

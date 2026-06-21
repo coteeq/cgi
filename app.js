@@ -157,6 +157,7 @@ function normalizeUrl(u) {
 // states: { [url]: { status: 'idle'|'fetching'|'ok'|'error'|'timeout', duration?: number } }
 let urlStates = {};
 let urlList = [];
+let selectedUrls = new Set();
 
 const STATUS_LABEL = { idle: '', fetching: 'fetching...', ok: 'ok', error: 'error', timeout: 'timeout' };
 
@@ -173,6 +174,16 @@ function renderUrlList() {
     const state = urlStates[url] || { status: 'idle' };
     const row = document.createElement('div');
     row.className = 'url-row';
+
+    const check = document.createElement('input');
+    check.type = 'checkbox';
+    check.className = 'url-check';
+    check.checked = selectedUrls.has(url);
+    check.addEventListener('change', () => {
+      if (check.checked) selectedUrls.add(url);
+      else selectedUrls.delete(url);
+      updateRemoveSelectedBtn();
+    });
 
     const text = document.createElement('span');
     text.className = 'url-text';
@@ -192,14 +203,16 @@ function renderUrlList() {
     fetchBtn.disabled = state.status === 'fetching';
     fetchBtn.addEventListener('click', () => pingOne(url));
 
-    const delBtn = document.createElement('button');
-    delBtn.className = 'url-delete btn-small btn-danger';
-    delBtn.textContent = 'x';
-    delBtn.addEventListener('click', () => deleteUrl(url));
-
-    row.append(text, statusEl, durEl, fetchBtn, delBtn);
+    row.append(check, text, statusEl, durEl, fetchBtn);
     container.appendChild(row);
   }
+}
+
+function updateRemoveSelectedBtn() {
+  const btn = document.getElementById('remove-selected');
+  const n = selectedUrls.size;
+  btn.hidden = n === 0;
+  btn.textContent = n ? `Remove selected (${n})` : 'Remove selected';
 }
 
 function setUrlState(url, state) {
@@ -214,12 +227,14 @@ function updateFetchAllBtn() {
 }
 
 /* ---------- URL CRUD ---------- */
-function deleteUrl(url) {
-  urlList = urlList.filter((u) => u !== url);
-  delete urlStates[url];
+function removeSelected() {
+  urlList = urlList.filter((u) => !selectedUrls.has(u));
+  for (const u of selectedUrls) delete urlStates[u];
+  selectedUrls.clear();
   saveUrls(urlList);
   renderUrlList();
   updateFetchAllBtn();
+  updateRemoveSelectedBtn();
 }
 
 function addUrl(raw) {
@@ -231,14 +246,17 @@ function addUrl(raw) {
 }
 
 async function resetToDefaults() {
+  if (!confirm('Reset the URL list to defaults? This will discard your current list.')) return;
   try {
     const res = await fetch('defaults.json', { cache: 'no-store' });
     const data = await res.json();
     urlList = data.urls;
     urlStates = {};
+    selectedUrls.clear();
     saveUrls(urlList);
     renderUrlList();
     updateFetchAllBtn();
+    updateRemoveSelectedBtn();
   } catch (e) {
     console.error('Could not load defaults.json', e);
   }
@@ -309,6 +327,7 @@ async function main() {
 
   document.getElementById('fetch-all').addEventListener('click', fetchAll);
   document.getElementById('reset-urls').addEventListener('click', resetToDefaults);
+  document.getElementById('remove-selected').addEventListener('click', removeSelected);
   document.getElementById('add-url').addEventListener('click', () => {
     const input = document.getElementById('url-input');
     addUrl(input.value);
