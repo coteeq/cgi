@@ -113,15 +113,20 @@ function render(trace, colos) {
 }
 
 /* ---------- Trace fetch ---------- */
+let traceController = null;
+
 async function fetchTrace(colos) {
   const output = document.getElementById('output');
   const btn = document.getElementById('refresh');
+  const cancelBtn = document.getElementById('cancel-refresh');
   output.innerHTML = '<div id="status">Fetching trace...</div>';
   btn.disabled = true;
+  cancelBtn.hidden = false;
+  traceController = new AbortController();
 
   try {
     const url = `https://one.one.one.one/cdn-cgi/trace?ts=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetch(url, { cache: 'no-store', signal: traceController.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const trace = parseTrace(text);
@@ -129,12 +134,21 @@ async function fetchTrace(colos) {
     render(trace, colos);
   } catch (e) {
     output.innerHTML = '';
-    const err = document.createElement('div');
-    err.className = 'error';
-    err.textContent = `Failed to fetch trace: ${e.message}`;
-    output.appendChild(err);
+    if (e.name === 'AbortError') {
+      const note = document.createElement('div');
+      note.id = 'status';
+      note.textContent = 'Trace fetch canceled.';
+      output.appendChild(note);
+    } else {
+      const err = document.createElement('div');
+      err.className = 'error';
+      err.textContent = `Failed to fetch trace: ${e.message}`;
+      output.appendChild(err);
+    }
   } finally {
     btn.disabled = false;
+    cancelBtn.hidden = true;
+    traceController = null;
   }
 }
 
@@ -158,8 +172,9 @@ function normalizeUrl(u) {
 let urlStates = {};
 let urlList = [];
 let selectedUrls = new Set();
+let urlControllers = {};
 
-const STATUS_LABEL = { idle: '', fetching: 'fetching...', ok: 'ok', error: 'error', timeout: 'timeout' };
+const STATUS_LABEL = { idle: '', fetching: 'fetching...', ok: 'ok', error: 'error', timeout: 'timeout', canceled: 'canceled' };
 
 function renderUrlList() {
   const container = document.getElementById('url-list');
@@ -204,6 +219,15 @@ function renderUrlList() {
     fetchBtn.addEventListener('click', () => pingOne(url));
 
     row.append(check, text, statusEl, durEl, fetchBtn);
+
+    if (state.status === 'fetching') {
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'url-cancel btn-small';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', () => cancelOne(url));
+      row.append(cancelBtn);
+    }
+
     container.appendChild(row);
   }
 }
@@ -224,12 +248,17 @@ function setUrlState(url, state) {
 function updateFetchAllBtn() {
   const anyFetching = urlList.some((u) => (urlStates[u] || {}).status === 'fetching');
   document.getElementById('fetch-all').disabled = anyFetching;
+  document.getElementById('cancel-all').hidden = !anyFetching;
 }
 
 /* ---------- URL CRUD ---------- */
 function removeSelected() {
   urlList = urlList.filter((u) => !selectedUrls.has(u));
-  for (const u of selectedUrls) delete urlStates[u];
+  for (const u of selectedUrls) {
+    urlControllers[u]?.abort('cancel');
+    delete urlControllers[u];
+    delete urlStates[u];
+  }
   selectedUrls.clear();
   saveUrls(urlList);
   renderUrlList();
@@ -265,24 +294,33 @@ async function resetToDefaults() {
 /* ---------- Ping logic ---------- */
 async function pingUrl(url) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20_000);
+  urlControllers[url] = controller;
+  const timer = setTimeout(() => controller.abort('timeout'), 20_000);
   const start = Date.now();
   setUrlState(url, { status: 'fetching' });
   try {
     await fetch(normalizeUrl(url), { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
-    clearTimeout(timer);
     setUrlState(url, { status: 'ok', duration: Date.now() - start });
   } catch (e) {
+    const reason = controller.signal.reason;
+    const status = reason === 'cancel' ? 'canceled' : reason === 'timeout' ? 'timeout' : 'error';
+    setUrlState(url, { status, duration: Date.now() - start });
+  } finally {
     clearTimeout(timer);
-    setUrlState(url, {
-      status: e.name === 'AbortError' ? 'timeout' : 'error',
-      duration: Date.now() - start,
-    });
+    delete urlControllers[url];
   }
 }
 
 function pingOne(url) {
   pingUrl(url);
+}
+
+function cancelOne(url) {
+  urlControllers[url]?.abort('cancel');
+}
+
+function cancelAll() {
+  for (const url of urlList) urlControllers[url]?.abort('cancel');
 }
 
 function fetchAll() {
@@ -307,6 +345,7 @@ async function main() {
   }
 
   document.getElementById('refresh').addEventListener('click', () => fetchTrace(colos));
+  document.getElementById('cancel-refresh').addEventListener('click', () => traceController?.abort());
   fetchTrace(colos);
 
   // Init URL list
@@ -326,6 +365,7 @@ async function main() {
   renderUrlList();
 
   document.getElementById('fetch-all').addEventListener('click', fetchAll);
+  document.getElementById('cancel-all').addEventListener('click', cancelAll);
   document.getElementById('reset-urls').addEventListener('click', resetToDefaults);
   document.getElementById('remove-selected').addEventListener('click', removeSelected);
   document.getElementById('add-url').addEventListener('click', () => {

@@ -1,4 +1,4 @@
-const CACHE = 'trace-v3';
+const CACHE = 'trace-v4';
 const ASSETS = ['/', '/index.html', '/style.css', '/app.js', '/colos.json', '/defaults.json'];
 
 self.addEventListener('install', (e) => {

@@ -100,7 +100,7 @@ h1 {
 }
 
 /* ---------- Header / toolbar buttons ---------- */
-#theme-toggle, #refresh, #fetch-all, #reset-urls, #remove-selected {
+#theme-toggle, #refresh, #cancel-refresh, #fetch-all, #cancel-all, #reset-urls, #remove-selected {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
@@ -114,6 +114,8 @@ h1 {
 }
 #theme-toggle:hover,
 #fetch-all:hover:not(:disabled),
+#cancel-all:hover:not(:disabled),
+#cancel-refresh:hover:not(:disabled),
 #reset-urls:hover:not(:disabled),
 #remove-selected:hover:not(:disabled),
 #refresh:hover:not(:disabled) { border-color: var(--accent); }
@@ -279,6 +281,7 @@ h1 {
 
 .url-status--idle    { color: var(--text-muted); }
 .url-status--fetching { color: var(--text-muted); font-style: italic; }
+.url-status--canceled { color: var(--text-muted); }
 .url-status--ok      { background: #d4edda; color: #155724; }
 .url-status--error   { background: #f8d7da; color: #721c24; }
 .url-status--timeout { background: #fff3cd; color: #856404; }
